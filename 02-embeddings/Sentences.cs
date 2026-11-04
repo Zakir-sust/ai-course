@@ -38,6 +38,6 @@ static class Data
         ("How much can be withheld when a parent company owns a large stake in its subsidiary?", 1),
         ("Does a construction job abroad for six months create a taxable presence?", 18),
         ("Is software licensing or brand usage fee income covered, and what counts?", 11),
-        ("What's the definition of royalties?", 12)
+        ("What's the definition of royalties?", 11)
     ];
 }
