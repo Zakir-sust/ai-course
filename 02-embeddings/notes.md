@@ -9,4 +9,4 @@ Written by Claude at my request, from my code and its output.
 - **The miss:** "Is software licensing or brand usage fee income covered, and what counts?" expected [11] and got [12] (0.556 vs 0.499). The query never says "royalties" and asks two things at once. All of its top 3 are royalties sentences, so retrieval found the right topic but not the right sentence.
 - **Added query:** "What's the definition of royalties?" hits [11] at 0.730 (vs 0.687 for [12]). I first labelled it [12] by mistake and corrected the label to [11] after seeing the output. [12] contains the literal words "definition of royalties" and still lost, because embeddings match meaning rather than keywords.
 - **Result:** 3 of 4 queries hit top-1. The software licensing query stays in as a known miss.
-- **Still to learn:** I can say cosine uses the dot product. I still need to explain the division by the two lengths, and why that makes length not matter.
+- **Learn-back:** doubling every number in one vector leaves the cosine score unchanged. The dot product doubles and that vector's length doubles, so the two cancel. Only the direction counts.
