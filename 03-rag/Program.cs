@@ -6,7 +6,7 @@ using OllamaSharp;                                              // OllamaApiClie
 using OllamaSharp.Models;                                       // OllamaOption
 using UglyToad.PdfPig;                                          // PdfDocument
 using UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor;     // ContentOrderTextExtractor
-var pdfPath = "/Users/purple_ghost/Documents/Myself/My Career/learning projects/taxdoc/sources/apple-fy2026.pdf";
+var pdfPath = "/Users/purple_ghost/Documents/Myself/My Career/learning projects/findoc/sources/apple-fy2026.pdf";
 if (!File.Exists(pdfPath))
 {
     Console.WriteLine($"PDF not found: {pdfPath}");

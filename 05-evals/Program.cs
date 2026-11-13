@@ -105,7 +105,7 @@ void PrintScores(int n, AnswerRow row, NumericMetric relevance, NumericMetric gr
 // The C04 pipeline (03-rag), unchanged: chunk by 10-K item, embed, top 5, rules in System, sources + question in User.
 async Task<List<AnswerRow>> GenerateAnswers()
 {
-    var pdfPath = "/Users/purple_ghost/Documents/Myself/My Career/learning projects/taxdoc/sources/apple-fy2026.pdf";
+    var pdfPath = "/Users/purple_ghost/Documents/Myself/My Career/learning projects/findoc/sources/apple-fy2026.pdf";
     if (!File.Exists(pdfPath))
         throw new FileNotFoundException($"PDF not found: {pdfPath}");
 

@@ -4,7 +4,7 @@ C06: an LLM judge vs my own labels. Skeleton by Claude; the scores, the "why" an
 Data swapped on 13 Nov from the US–Bangladesh tax treaty to Apple's fiscal 2026 annual report (10-K). Claude re-ran
 **run 1 only**: the 5 new answers are in `answers.json` (the 03-rag pipeline + a net-income question). The judge has
 **not** been run on them, so my scores still go in first, blind. Read each answer next to its `Sources` (and the PDF,
-`taxdoc/sources/apple-fy2026.pdf`: total net sales, R&D and net income are on PDF page 35).
+`findoc/sources/apple-fy2026.pdf`: total net sales, R&D and net income are on PDF page 35).
 
 Scale, the same one the judge uses (1–5):
 - **Relevance:** does the answer address the question? 5 = fully, 1 = off-topic.
