@@ -1,8 +1,8 @@
-﻿using System.Numerics.Tensors;                                  // TensorPrimitives.CosineSimilarity
+using System.Numerics.Tensors;                                  // TensorPrimitives.CosineSimilarity
 using System.Runtime.CompilerServices;                          // CallerFilePath
 using System.Text;                                              // StringBuilder
 using System.Text.Json;                                         // answers.json
-using System.Text.RegularExpressions;                           // the "ARTICLE N" headings
+using System.Text.RegularExpressions;                           // the "Item N." headings
 using Microsoft.Extensions.AI;                                  // IChatClient, ChatMessage, ChatResponse, ChatOptions
 using Microsoft.Extensions.AI.Evaluation;                       // ChatConfiguration, IEvaluator, CompositeEvaluator, NumericMetric
 using Microsoft.Extensions.AI.Evaluation.Quality;               // RelevanceEvaluator, GroundednessEvaluator, GroundednessEvaluatorContext
@@ -31,7 +31,7 @@ if (!File.Exists(answersPath))
     foreach (var (i, row) in rows.Index())
     {
         Console.WriteLine($"\n#{i + 1} Q: {row.Question}   (expect: {row.Expected})");
-        Console.WriteLine("Sources: " + string.Join(", ", row.Articles.Select((a, n) => $"[{n + 1}] = Art. {a}")));
+        Console.WriteLine("Sources: " + string.Join(", ", row.Items.Select((a, n) => $"[{n + 1}] = Item {a}")));
         Console.WriteLine("A: " + row.Answer);
     }
     Console.WriteLine($"\nSaved {rows.Count} answers to answers.json.");
@@ -102,10 +102,10 @@ void PrintScores(int n, AnswerRow row, NumericMetric relevance, NumericMetric gr
     table.Add($"| {n} | {row.Question} | {relevance.Value?.ToString() ?? "-"} | {groundedness.Value?.ToString() ?? "-"} |");
 }
 
-// The C04 pipeline, unchanged: chunk by article, embed, top 5, rules in System, sources + question in User.
+// The C04 pipeline (03-rag), unchanged: chunk by 10-K item, embed, top 5, rules in System, sources + question in User.
 async Task<List<AnswerRow>> GenerateAnswers()
 {
-    var pdfPath = "/Users/purple_ghost/Documents/Myself/My Career/learning projects/taxdoc/sources/us-bangladesh-2004.pdf";
+    var pdfPath = "/Users/purple_ghost/Documents/Myself/My Career/learning projects/taxdoc/sources/apple-fy2026.pdf";
     if (!File.Exists(pdfPath))
         throw new FileNotFoundException($"PDF not found: {pdfPath}");
 
@@ -121,11 +121,11 @@ async Task<List<AnswerRow>> GenerateAnswers()
 
     var questions = new List<(string Question, string Expected)>
     {
-        ("What is the maximum withholding rate on dividends?", "Art. 10"),
-        ("How is interest taxed?", "Art. 11"),
-        ("What counts as a permanent establishment?", "Art. 5"),
-        ("What is the corporate income tax rate in Bangladesh?", "Not in the sources."),
-        ("What is the maximum withholding rate on royalties?", "Art. 12"),
+        ("What were total net sales in fiscal 2026?", "Item 7 or 8"),
+        ("How much did the company spend on research and development?", "Item 7 or 8"),
+        ("Where is the company headquartered?", "Item 2"),
+        ("What was Microsoft's revenue in fiscal 2026?", "Not in the sources."),
+        ("What was net income in fiscal 2026?", "Item 8"),
     };
 
     var systemMessage = string.Join("\n",
@@ -141,7 +141,7 @@ async Task<List<AnswerRow>> GenerateAnswers()
 
         var sb = new StringBuilder();
         foreach (var (i, chunk) in top5.Index())
-            sb.Append($"[{i + 1}] Article {chunk.Article}\n{chunk.Text}\n\n");
+            sb.Append($"[{i + 1}] Item {chunk.Item}\n{chunk.Text}\n\n");
         var sources = sb.ToString();
 
         List<ChatMessage> messages =
@@ -151,36 +151,52 @@ async Task<List<AnswerRow>> GenerateAnswers()
         ];
         var reply = await chatClient.GetResponseAsync(messages, options);
 
-        rows.Add(new AnswerRow(question, expected, reply.Text, sources, top5.Select(x => x.Article).ToList()));
+        rows.Add(new AnswerRow(question, expected, reply.Text, sources, top5.Select(x => x.Item).ToList()));
     }
     return rows;
 }
 
-async Task<List<(int Article, string Text, double Score)>> TopFive(
+async Task<List<(string Item, string Text, double Score)>> TopFive(
     IEmbeddingGenerator<string, Embedding<float>> generator, string query,
-    List<(int Article, string Text)> chunks, GeneratedEmbeddings<Embedding<float>> embeddings)
+    List<(string Item, string Text)> chunks, GeneratedEmbeddings<Embedding<float>> embeddings)
 {
     var queryEmbedding = await generator.GenerateAsync(query);
     return embeddings
-        .Select((e, i) => (chunks[i].Article, chunks[i].Text,
+        .Select((e, i) => (chunks[i].Item, chunks[i].Text,
             Score: (double)TensorPrimitives.CosineSimilarity(e.Vector.Span, queryEmbedding.Vector.Span)))
         .OrderByDescending(x => x.Score)
         .Take(5)
         .ToList();
 }
 
-List<(int Article, string Text)> GetChunks(string filePath)
+// The same chunking as 03-rag: split at "Item N." headings (table-of-contents page skipped), long items cut at ~3,000 characters.
+List<(string Item, string Text)> GetChunks(string filePath)
 {
     using var pdfDoc = PdfDocument.Open(filePath);
-    var fullText = string.Join("\n", pdfDoc.GetPages().Select(p => ContentOrderTextExtractor.GetText(p)));
-    var headings = Regex.Matches(fullText, @"^ARTICLE (\d+)\s*$", RegexOptions.Multiline);
+    var pages = pdfDoc.GetPages().Select(p => ContentOrderTextExtractor.GetText(p)).ToList();
+    var heading = new Regex(@"^[ \t]*Item[ \t]+(\d{1,2}[A-C]?)\.", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+    var fullText = string.Join("\n", pages.Select(p => heading.Matches(p).Count >= 10 ? "" : p));
+    var headings = heading.Matches(fullText);
 
-    var chunks = new List<(int, string)>();
+    const int maxChars = 3000;
+    var chunks = new List<(string, string)>();
     for (int i = 0; i < headings.Count; i++)
     {
         int start = headings[i].Index;
         int end = i + 1 < headings.Count ? headings[i + 1].Index : fullText.Length;
-        chunks.Add((int.Parse(headings[i].Groups[1].Value), fullText[start..end].Trim()));
+        var item = headings[i].Groups[1].Value.ToUpperInvariant();
+
+        var piece = new StringBuilder();
+        foreach (var line in fullText[start..end].Split('\n'))
+        {
+            if (piece.Length + line.Length > maxChars && piece.Length > 0)
+            {
+                chunks.Add((item, piece.ToString().Trim()));
+                piece.Clear();
+            }
+            piece.Append(line).Append('\n');
+        }
+        if (piece.ToString().Trim().Length > 0) chunks.Add((item, piece.ToString().Trim()));
     }
     return chunks;
 }
@@ -188,4 +204,4 @@ List<(int Article, string Text)> GetChunks(string filePath)
 // The folder of this file, so answers.json sits next to Program.cs whether you run from the terminal or Rider (bin/).
 static string ProjectDir([CallerFilePath] string path = "") => Path.GetDirectoryName(path)!;
 
-record AnswerRow(string Question, string Expected, string Answer, string Sources, List<int> Articles);
+record AnswerRow(string Question, string Expected, string Answer, string Sources, List<string> Items);
