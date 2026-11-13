@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="rates.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="metrics.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

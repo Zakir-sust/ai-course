@@ -1,0 +1,42 @@
+[
+  {
+    "company": "Apple",
+    "name": "revenue",
+    "value": 478834,
+    "unit": "USD millions",
+    "item": "Item 8",
+    "note": "Total net sales, fiscal 2026 (year ended 26 Sep 2026); up 15% from 416,161"
+  },
+  {
+    "company": "Apple",
+    "name": "net_income",
+    "value": 132175,
+    "unit": "USD millions",
+    "item": "Item 8",
+    "note": "Net income, fiscal 2026; fiscal 2025 was 112,010"
+  },
+  {
+    "company": "Apple",
+    "name": "rnd_expense",
+    "value": 45765,
+    "unit": "USD millions",
+    "item": "Item 8",
+    "note": "Research and development, fiscal 2026; up 32% from 34,550; 10% of net sales (Item 7)"
+  },
+  {
+    "company": "Apple",
+    "name": "iphone_sales",
+    "value": 254098,
+    "unit": "USD millions",
+    "item": "Item 7",
+    "note": "iPhone net sales, fiscal 2026; up 21%"
+  },
+  {
+    "company": "Apple",
+    "name": "employees",
+    "value": 167000,
+    "unit": "people",
+    "item": "Item 1",
+    "note": "approximately, full-time equivalent, as of 26 Sep 2026"
+  }
+]
