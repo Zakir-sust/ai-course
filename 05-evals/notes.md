@@ -10,17 +10,19 @@ Scale, the same one the judge uses (1–5):
 - **Relevance:** does the answer address the question? 5 = fully, 1 = off-topic.
 - **Groundedness:** is every claim backed by the 5 sources? 5 = all of it, 1 = made up.
 
-**My columns go in before run 2** (`dotnet run` again = the judge, ~2 min). Then the judge's columns from run 2's table.
+**My columns went in before run 2** (14 Nov), then the judge's columns from run 2 (`dotnet run`, ~2 min). – = the judge's score didn't parse.
 
 | # | Question | Me R | Me G | Judge R | Judge G | Why (mine, a few words) |
 |---|---|------|------|---|---|---|
-| 1 | Total net sales in fiscal 2026 |  |  |  |  |  |
-| 2 | R&D spending |  |  |  |  |  |
-| 3 | Where is the company headquartered |  |  |  |  |  |
-| 4 | Microsoft's revenue in fiscal 2026 (not in the report) |  |  |  |  |  |
-| 5 | Net income in fiscal 2026 |  |  |  |  |  |
+| 1 | Total net sales in fiscal 2026 | 4 | 5 | 4 | 5 |  |
+| 2 | R&D spending | 4 | 1 | 5 | – |  |
+| 3 | Where is the company headquartered | 4 | 5 | 4 | 5 |  |
+| 4 | Microsoft's revenue in fiscal 2026 (not in the report) | 5 | 5 | 4 | – | not in the sources, and the model said so |
+| 5 | Net income in fiscal 2026 | 1 | 1 | – | 2 | generation failure: $132,175M is in source [5], the model still refused |
 
-**Where the judge and I disagree, and why:** (fill in after run 2)
+**Where the judge and I disagree, and why:** #4 (Microsoft): the revenue isn't in the sources and the model said so correctly, so I gave it 5. The judge gave relevance 4, and its groundedness score didn't parse.
+
+**Rerun with the unparsed summary (14 Nov, Claude, from the run):** 5 of 10 scores didn't parse (I predicted 3), all on the hard rows: #2 both, #4 both, #5 relevance. #1 and #3 parsed in both runs. Every failed reply holds only the `<S0>` reasoning and stops mid-sentence after ~2,500–3,500 characters, before the score tag: it looks like the reply hit an output-length cap. The hard rows make the judge reason longer, so they're the ones that lose their score. → C23.
 
 **Why groundedness gets the sources and relevance doesn't** (I didn't know; Claude's answer): groundedness asks "is every claim in these sources?", so the judge needs them to compare against. Relevance asks "does it answer the question?", which only needs the question and the answer.
 

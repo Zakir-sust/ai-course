@@ -42,6 +42,7 @@ if (!File.Exists(answersPath))
 var answers = JsonSerializer.Deserialize<List<AnswerRow>>(File.ReadAllText(answersPath))!;
 Console.WriteLine($"Judging {answers.Count} saved answers from answers.json ...");
 var table = new List<string> { "| # | Question | Judge R | Judge G |", "|---|---|---|---|" };
+var unparsed = new List<string>(); // one line per score the judge's reply didn't give us: never dropped silently
 
 // ---- The judge: your part ----------------------------------------------------------------------
 
@@ -83,6 +84,11 @@ foreach (var (i, row) in answers.Index())
 }
 
 Console.WriteLine("\n" + string.Join("\n", table));
+
+// The evidence for every "-" in the table: which score, and the judge's own diagnostic.
+Console.WriteLine($"\nUnparsed: {unparsed.Count} of {answers.Count * 2} scores");
+foreach (var line in unparsed)
+    Console.WriteLine("  " + line);
 return;
 
 // ---- Helpers (boilerplate) ---------------------------------------------------------------------
@@ -98,6 +104,14 @@ void PrintScores(int n, AnswerRow row, NumericMetric relevance, NumericMetric gr
         Console.WriteLine($"    why: {metric.Reason}");
         foreach (var d in metric.Diagnostics ?? [])
             Console.WriteLine($"    {d.Severity}: {d.Message}");
+
+        if (metric.Value is null)
+        {
+            // Prefer the Error diagnostic (the parse failure) over the Informational chain of thought.
+            var cause = (metric.Diagnostics ?? []).OrderByDescending(d => d.Severity).FirstOrDefault();
+            var message = cause is null ? "no diagnostic" : $"{cause.Severity}: {OneLine(cause.Message, 200)}";
+            unparsed.Add($"#{n} {metric.Name}: {message}");
+        }
     }
     table.Add($"| {n} | {row.Question} | {relevance.Value?.ToString() ?? "-"} | {groundedness.Value?.ToString() ?? "-"} |");
 }
@@ -203,5 +217,12 @@ List<(string Item, string Text)> GetChunks(string filePath)
 
 // The folder of this file, so answers.json sits next to Program.cs whether you run from the terminal or Rider (bin/).
 static string ProjectDir([CallerFilePath] string path = "") => Path.GetDirectoryName(path)!;
+
+// A diagnostic can carry the judge's whole reply: squash it to one line and cut it, so the summary stays readable.
+static string OneLine(string text, int max)
+{
+    var line = Regex.Replace(text, @"\s+", " ").Trim();
+    return line.Length <= max ? line : line[..max] + " …";
+}
 
 record AnswerRow(string Question, string Expected, string Answer, string Sources, List<string> Items);
